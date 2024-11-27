@@ -1,0 +1,6 @@
+@WaizeRoutingServer_HostAddress = http://localhost:5117
+
+GET {{WaizeRoutingServer_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

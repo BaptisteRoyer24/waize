@@ -1,0 +1,15 @@
+.direction__distance {
+    font-weight: bold;
+}
+
+.direction__instruction {
+    margin-right: 10px;
+}
+
+.direction__street {
+    color: #888;
+}
+
+.direction__icon {
+    color: #000;
+}

@@ -1,0 +1,44 @@
+# Ignorer les fichiers et dossiers générés dans ce projet
+bin/
+obj/
+out/
+
+# Fichiers spécifiques à l'utilisateur
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Fichiers de logs
+logs/
+*.log
+
+# Configuration spécifique
+appsettings.json
+appsettings.Development.json
+
+# Packages et gestionnaires de dépendances
+/Packages/
+/.nuget/
+/node_modules/
+/wwwroot/node_modules/
+/wwwroot/dist/
+
+# Dossiers d'IDE
+.vscode/
+.idea/
+.vs/
+
+# Fichiers de build temporaires
+*.tmp
+*.temp
+*.bak
+*.swp
+
+# Fichiers de JetBrains Rider
+.idea/
+*.sln.iml
+
+# Autres fichiers inutiles
+.DS_Store
+Thumbs.db

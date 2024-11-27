@@ -1,0 +1,117 @@
+/* ---------- Base HTML ---------- */
+
+:root {
+    --shadow: 0 2px 2px rgba(0, 0, 0, 0.5);
+}
+
+body {
+    margin: 0;
+    padding: 0;
+}
+
+main {
+    display: flex;
+    width: 100vw;
+    height: 100vh;
+}
+
+/* ---------- Main sections containers ---------- */
+
+.left-menu-container {
+    display: flex;
+    flex-direction: column;
+    width: 25%;
+    height: 100%;
+}
+
+.inputs-container {
+    display: flex;
+    width: 100%;
+    height: 30%;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    gap: 10%;
+    background: #ffffff;
+}
+
+.directions-suggestions-container {
+    display: flex;
+    width: 100%;
+    height: 70%;
+    background: #f4f4f4;
+    flex-direction: column;
+}
+
+.map-container {
+    display: flex;
+    width: 75%;
+    height: 100%;
+    background: #d5f0ff;
+    justify-content: center;
+    align-items: end;
+}
+
+#map {
+    width: 100%;
+    height: 100%;
+    background: black;
+}
+
+.popup-container {
+    display: flex;
+    width: 50%;
+    height: 10%;
+    justify-content: space-around;
+    align-items: center;
+    background: #ffffff;
+    margin-bottom: 5%;
+    border-radius: 25px;
+    box-shadow: var(--shadow);
+    position: absolute;
+}
+
+/* ---------- Element containers ---------- */
+
+.inputs-container > label {
+    display: flex;
+    width: 70%;
+    height: 20%;
+}
+
+.origin-input, .destination-input {
+    width: 100%;
+    height: 100%;
+    border: none;
+    border-radius: 5px;
+    box-shadow: var(--shadow);
+    background: #f4f4f4;
+    padding-left: 5%;
+}
+
+.directions-list {
+    margin: 20px 0;
+}
+
+.direction-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #fff;
+    padding: 15px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.direction-info {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.popup-close {
+    width: 25%;
+    height: 50%;
+    border: #888888 solid 1px;
+    border-radius: 20px;
+    background: #ffffff;
+}

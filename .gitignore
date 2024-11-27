@@ -1,0 +1,28 @@
+# Dossiers générés par les IDE
+.idea/
+*.iml
+
+# Fichiers sensibles
+appsettings.json
+launchSettings.json
+
+# Dossiers de build et temporaires
+bin/
+obj/
+out/
+
+# Node.js
+node_modules/
+
+# Logs
+logs/
+*.log
+
+# Fichiers temporaires
+*.tmp
+*.temp
+*.bak
+
+# Système
+.DS_Store
+Thumbs.db

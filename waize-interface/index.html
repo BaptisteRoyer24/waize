@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Waize</title>
+    <link rel="stylesheet" href="css/containers.css">
+    <link rel="stylesheet" href="css/elements.css">
+    <link rel="stylesheet" href="css/modifiers.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+</head>
+<body>
+    <script src="js/map.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <main>
+        <section class="left-menu-container">
+            <section class="inputs-container">
+                <label>
+                    <span class="visually--hidden">Enter your origin</span>
+                    <input type="text" class="origin-input" placeholder="Origin">
+                </label>
+                <label>
+                    <span class="visually--hidden">Enter your destination</span>
+                    <input type="text" class="destination-input" placeholder="Destination">
+                </label>
+            </section>
+            <section class="directions-suggestions-container">
+                <div class="direction-item">
+                    <div class="direction-info">
+                        <span class="direction__distance">100m</span>
+                        <span class="direction__instruction">Turn right</span>
+                        <span class="direction__street">Rue des Colombes</span>
+                    </div>
+                    <div class="direction__icon">
+                        <span>&#10132;</span>
+                    </div>
+                </div>
+                <div class="direction-item">
+                    <div class="direction-info">
+                        <span class="direction__distance">350m</span>
+                        <span class="direction__instruction">Turn right</span>
+                        <span class="direction__street">Avenue Meg</span>
+                    </div>
+                    <div class="direction__icon">
+                        <span>&#10132;</span>
+                    </div>
+                </div>
+                <div class="direction-item">
+                    <div class="direction-info">
+                        <span class="direction__distance">3km</span>
+                        <span class="direction__instruction">Turn right</span>
+                        <span class="direction__street">Parc Maurice Thorez</span>
+                    </div>
+                    <div class="direction__icon">
+                        <span>&#10132;</span>
+                    </div>
+                </div>
+            </section>
+        </section>
+        <section class="map-container">
+            <div id="map"></div>
+            <div class="popup-container">
+                <span class="popup-message">Dangerous weather conditions are expected!</span>
+                <button class="popup-close">Close</button>
+            </div>
+        </section>
+    </main>
+</body>
