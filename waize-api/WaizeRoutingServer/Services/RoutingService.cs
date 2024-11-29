@@ -4,7 +4,7 @@ using System.Text.Json;
 
 public interface IRoutingService
 {
-    Task<List<RouteSection>> GetDirectionsAsync(Coordinate origin, Coordinate destination);
+    Task<RouteDetails> GetDirectionsAsync(Coordinate origin, Coordinate destination);
 }
 
 public class RoutingService : IRoutingService
@@ -17,7 +17,7 @@ public class RoutingService : IRoutingService
         _httpClient = httpClient;
     }
 
-    public async Task<List<RouteSection>> GetDirectionsAsync(Coordinate origin, Coordinate destination)
+    public async Task<RouteDetails> GetDirectionsAsync(Coordinate origin, Coordinate destination)
     {
         // Step 1: Retrieve the city name from the origin
         var cityName = await GetCityNameAsync(origin);
@@ -44,20 +44,22 @@ public class RoutingService : IRoutingService
         var nearestStationFromDestination = await GetNearestStationByFoot(nearestStationsFromDestination, destination);
 
         // Step 8: Get the walking route from origin -> first station
-        var firstWalkSection = await GetRouteGeometryAsync(origin, nearestStationFromOrigin.Coordinate, true);
+        var (firstWalkCoordinates, firstWalkSteps) = await GetRouteGeometryAsync(origin, nearestStationFromOrigin.Coordinate, true);
 
         // Step 9: Get the biking route from first station -> second station
-        var bikeSection = await GetRouteGeometryAsync(nearestStationFromOrigin.Coordinate, nearestStationFromDestination.Coordinate, false);
+        var (bikeCoordinates, bikeSteps) = await GetRouteGeometryAsync(nearestStationFromOrigin.Coordinate, nearestStationFromDestination.Coordinate, false);
 
         // Step 10: Get the walking route from second station -> destination
-        var secondWalkSection = await GetRouteGeometryAsync(nearestStationFromDestination.Coordinate, destination, true);
+        var (secondWalkCoordinates, secondWalkSteps) = await GetRouteGeometryAsync(nearestStationFromDestination.Coordinate, destination, true);
 
         // Combine all sections into a list of RouteSection objects
-        return new List<RouteSection>
+        return new RouteDetails
         {
-            new RouteSection { Mode = "walking", Coordinates = firstWalkSection },
-            new RouteSection { Mode = "biking", Coordinates = bikeSection },
-            new RouteSection { Mode = "walking", Coordinates = secondWalkSection }
+            WalkingToStation = new RouteSection { Mode = "walking", Coordinates = firstWalkCoordinates, Steps = firstWalkSteps },
+            BikingBetweenStations = new RouteSection { Mode = "biking", Coordinates = bikeCoordinates, Steps = bikeSteps },
+            WalkingToDestination = new RouteSection { Mode = "walking", Coordinates = secondWalkCoordinates, Steps = secondWalkSteps },
+            PickupStation = nearestStationFromOrigin,
+            DropOffStation = nearestStationFromDestination
         };
     }
 
@@ -307,20 +309,20 @@ public class RoutingService : IRoutingService
         }
     }
     
-    private async Task<List<Coordinate>> GetRouteGeometryAsync(Coordinate origin, Coordinate destination, bool isWalking)
+    private async Task<(List<Coordinate>, List<DirectionStep>)> GetRouteGeometryAsync(Coordinate origin, Coordinate destination, bool isWalking)
     {
         try
         {
-            
             string mode = isWalking ? "routed-foot" : "routed-bike";
-            
+
             string originLatitude = origin.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture);
             string originLongitude = origin.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture);
             string destinationLatitude = destination.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture);
             string destinationLongitude = destination.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture);
+
             var url = $"https://routing.openstreetmap.de/{mode}/route/v1/driving/{originLongitude},{originLatitude};{destinationLongitude},{destinationLatitude}?overview=full&geometries=polyline&steps=true";
 
-            Console.WriteLine($"Appel de l'API pour les directions ({(isWalking ? "à pied" : "à vélo")}) : {url}");
+            Console.WriteLine($"API call for directions ({(isWalking ? "walking" : "biking")}): {url}");
 
             var request = new HttpRequestMessage(HttpMethod.Get, url);
             request.Headers.Add("User-Agent", "WaizeRoutingServer/1.0 (contact@yourdomain.com)");
@@ -333,15 +335,37 @@ public class RoutingService : IRoutingService
             using (var jsonDoc = JsonDocument.Parse(content))
             {
                 var route = jsonDoc.RootElement.GetProperty("routes")[0];
-                var encodedGeometry = route.GetProperty("geometry").GetString();
 
-                return DecodePolyline(encodedGeometry);
+                // Decode the geometry
+                var encodedGeometry = route.GetProperty("geometry").GetString();
+                var coordinates = DecodePolyline(encodedGeometry);
+
+                // Extract steps
+                var steps = route.GetProperty("legs")[0].GetProperty("steps")
+                    .EnumerateArray()
+                    .Select(step =>
+                    {
+                        // Try to get the "modifier" property safely
+                        string instruction = step.GetProperty("maneuver").TryGetProperty("modifier", out var modifierProp)
+                            ? modifierProp.GetString()
+                            : null;
+
+                        return new DirectionStep
+                        {
+                            Distance = step.GetProperty("distance").GetDouble(),
+                            Instruction = instruction, // Assign the safely retrieved instruction
+                            StreetName = step.GetProperty("name").GetString() ?? "Unknown street" // Default to "Unknown street" if name is null
+                        };
+                    })
+                    .ToList();
+
+                return (coordinates, steps);
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Erreur lors de la récupération de l'itinéraire : {ex.Message}");
-            return null;
+            Console.WriteLine($"Error fetching route geometry and steps: {ex.Message}");
+            return (new List<Coordinate>(), new List<DirectionStep>()); // Return empty results on failure
         }
     }
     
@@ -387,10 +411,28 @@ public class RoutingService : IRoutingService
     }
 }
 
+public class RouteDetails
+{
+    public RouteSection WalkingToStation { get; set; }
+    public RouteSection BikingBetweenStations { get; set; }
+    public RouteSection WalkingToDestination { get; set; }
+    public Station PickupStation { get; set; }
+    public Station DropOffStation { get; set; }
+}
+
 public class RouteSection
 {
     public string Mode { get; set; } // "walking" or "biking"
     public List<Coordinate> Coordinates { get; set; }
+    public List<DirectionStep> Steps { get; set; } // Steps for navigation
+
+}
+
+public class DirectionStep
+{
+    public double Distance { get; set; } // Distance in meters
+    public string Instruction { get; set; } // Maneuver type or instruction
+    public string StreetName { get; set; } // Name of the street
 }
 
 public class Station
