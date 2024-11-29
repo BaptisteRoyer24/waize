@@ -1,56 +1,37 @@
-using CoreWCF;
-using CoreWCF.Configuration;
-using CoreWCF.Description;
 using WaizeRoutingServer.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+// Configuration des services
+builder.Services.AddControllers(); // Ajout des contrôleurs REST
+builder.Services.AddHttpClient(); // Pour les appels HTTP externes
+builder.Services.AddSingleton<IRoutingService, RoutingService>(); // Injection du service métier
 
-builder.Services.AddServiceModelServices();
-builder.Services.AddServiceModelMetadata();
-builder.Services.AddScoped<ISoapItineraryService, SoapItineraryService>();
-builder.Services.AddScoped<ItineraryService>();
-
+// Étape 1 : Ajouter CORS
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll", policy =>
+    options.AddDefaultPolicy(policy =>
     {
-        policy.AllowAnyOrigin()
-            .AllowAnyMethod()
-            .AllowAnyHeader();
+        policy.WithOrigins("http://localhost:63343") // Autoriser les requêtes depuis ce domaine
+            .AllowAnyHeader()
+            .AllowAnyMethod();
     });
 });
 
 var app = builder.Build();
 
+// Configuration du pipeline
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseDeveloperExceptionPage(); // Page d'erreurs pour le développement
 }
 
-app.UseHttpsRedirection();
+// Étape 2 : Activer CORS
+app.UseCors();
 
-app.UseCors("AllowAll");
+app.UseRouting(); // Routage des requêtes
 
-app.UseAuthorization();
+app.MapControllers(); // Enregistre automatiquement les routes des contrôleurs REST
 
-app.UseServiceModel(serviceBuilder =>
-{
-    serviceBuilder.AddService<SoapItineraryService>();
-    serviceBuilder.AddServiceEndpoint<SoapItineraryService, ISoapItineraryService>(
-        new BasicHttpBinding(),
-        "/SoapItineraryService"
-    );
-
-    var serviceMetadataBehavior = app.Services.GetRequiredService<ServiceMetadataBehavior>();
-    serviceMetadataBehavior.HttpGetEnabled = true;
-    serviceMetadataBehavior.HttpGetUrl = new Uri("http://localhost:5100/SoapItineraryService?wsdl");
-});
-
-app.MapControllers();
-
+// Démarrer l'application
 app.Run();
