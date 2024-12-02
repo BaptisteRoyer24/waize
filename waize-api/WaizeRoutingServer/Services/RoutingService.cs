@@ -21,28 +21,45 @@ public class RoutingService : IRoutingService
     {
         // Step 1: Retrieve the city name from the origin
         var cityName = await GetCityNameAsync(origin);
-        Console.WriteLine(cityName);
 
         // Step 2: Retrieve the contract name from the city name
         var contractName = await GetContractNameAsync(cityName);
-        Console.WriteLine(contractName);
 
-        // Step 3: Retrieve the stations for the contract
-        var stations = await GetStationsByContractAsync(contractName);
+        List<Station> stations;
+        if (contractName == "Unknown contract")
+        {
+            // Step 3: Retrieve all stations
+            stations = await getAllStations();
+        }
+        else
+        {
+            // Step 3: Retrieve the stations for the contract
+            stations = await GetStationsByContractAsync(contractName);
+        }
 
         // Step 4: Find the 3 nearest stations to the origin
         var nearestStationsFromOrigin = GetNearestStations(stations, origin, true);
 
         // Step 5: Find the best station for pickup (minimizing walking distance)
-        var nearestStationFromOrigin = await GetNearestStationByFoot(nearestStationsFromOrigin, origin);
+        var (nearestStationFromOrigin, originFootDistance) = await GetNearestStationByFoot(nearestStationsFromOrigin, origin);
 
         // Step 6: Find the 3 nearest stations to the destination
         stations.Remove(nearestStationFromOrigin); // Remove the pickup station
         var nearestStationsFromDestination = GetNearestStations(stations, destination, false);
 
         // Step 7: Find the best station for drop-off (minimizing walking distance)
-        var nearestStationFromDestination = await GetNearestStationByFoot(nearestStationsFromDestination, destination);
+        var (nearestStationFromDestination, destinationFootDistance) = await GetNearestStationByFoot(nearestStationsFromDestination, destination);
 
+        // If it is not worth it to take the bicycle
+        if (await GetWalkingDistanceAsync(origin, destination) < (originFootDistance + destinationFootDistance))
+        {
+            var (originToDestinationFootCoordinates, originToDestinationFootSteps) = await GetRouteGeometryAsync(origin, destination, true);
+            return new RouteDetails
+            {
+                WalkingToStation = new RouteSection { Mode = "walking", Coordinates = originToDestinationFootCoordinates, Steps = originToDestinationFootSteps },
+            };
+        }
+        
         // Step 8: Get the walking route from origin -> first station
         var (firstWalkCoordinates, firstWalkSteps) = await GetRouteGeometryAsync(origin, nearestStationFromOrigin.Coordinate, true);
 
@@ -204,6 +221,62 @@ public class RoutingService : IRoutingService
         }
     }
 
+    private async Task<List<Station>> getAllStations()
+    {
+        try
+        {
+            var url = $"https://api.jcdecaux.com/vls/v1/stations?apiKey=" + JCDecauxAPIKey;
+
+            var request = new HttpRequestMessage(HttpMethod.Get, url);
+            request.Headers.Add("User-Agent", "WaizeRoutingServer/1.0 (contact@yourdomain.com)");
+
+            var response = await _httpClient.SendAsync(request);
+            response.EnsureSuccessStatusCode();
+
+            var content = await response.Content.ReadAsStringAsync();
+
+            var stations = new List<Station>();
+            using (var jsonDoc = JsonDocument.Parse(content))
+            {
+                foreach (var element in jsonDoc.RootElement.EnumerateArray())
+                {
+                    try
+                    {
+                        var positionElement = element.GetProperty("position");
+                        var station = new Station
+                        {
+                            Coordinate = new Coordinate
+                            {
+                                Latitude = positionElement.GetProperty("lat").GetDouble(),
+                                Longitude = positionElement.GetProperty("lng").GetDouble()
+                            },
+                            AvailableBikeStands = element.GetProperty("available_bike_stands").GetInt32(),
+                            AvailableBikes = element.GetProperty("available_bikes").GetInt32(),
+                            Status = element.GetProperty("status").GetString()
+                        };
+                        stations.Add(station);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Erreur lors de l'analyse d'une station : {ex.Message}");
+                    }
+                }
+
+                return stations;
+            }
+        }
+        catch (HttpRequestException ex)
+        {
+            Console.WriteLine($"Erreur HTTP : {ex.Message}");
+            throw new Exception("Impossible d'accéder à l'API JCDecaux pour récupérer les stations.");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erreur inattendue : {ex.Message}");
+            throw new Exception("Erreur inattendue lors de la récupération des stations.");
+        }
+    }
+
     private List<Station> GetNearestStations(List<Station> stations, Coordinate origin, bool pick)
     {
         var closestStations = stations
@@ -252,7 +325,7 @@ public class RoutingService : IRoutingService
         return degrees * Math.PI / 180;
     }
 
-    private async Task<Station> GetNearestStationByFoot(List<Station> stations, Coordinate origin)
+    private async Task<(Station NearestStation, double Distance)> GetNearestStationByFoot(List<Station> stations, Coordinate origin)
     {
         Station nearestStation = null;
         double shortestDistance = double.MaxValue;
@@ -269,9 +342,9 @@ public class RoutingService : IRoutingService
             }
         }
 
-        Console.WriteLine($"Station optimale à pied : {nearestStation.Coordinate.Latitude}, {nearestStation.Coordinate.Longitude} | Distance : {shortestDistance} mètres");
+        Console.WriteLine($"Station optimale à pied : {nearestStation?.Coordinate.Latitude}, {nearestStation?.Coordinate.Longitude} | Distance : {shortestDistance} mètres");
 
-        return nearestStation;
+        return (nearestStation, shortestDistance);
     }
     
     private async Task<double> GetWalkingDistanceAsync(Coordinate origin, Coordinate destination)

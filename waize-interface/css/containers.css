@@ -93,6 +93,7 @@ input {
     display: flex;
     width: 70%;
     height: 20%;
+    flex-direction: column;
 }
 
 .origin-input, .destination-input {
@@ -103,6 +104,25 @@ input {
     box-shadow: var(--shadow);
     background: #f4f4f4;
     padding-left: 5%;
+}
+
+.autocomplete-results {
+    position: relative;
+    width: 100%;
+    background: #ffffff;
+    border-radius: 5px;
+    box-shadow: var(--shadow);
+}
+
+.autocomplete-item {
+    background: #ffffff;
+    padding: 5%;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 1);
+    font-size: clamp(12px, 2vw, 18px);
+}
+
+.autocomplete-item:last-child {
+    border-radius: 5px;
 }
 
 .directions-list {

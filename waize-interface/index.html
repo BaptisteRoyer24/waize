@@ -10,7 +10,9 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 </head>
 <body>
-    <script src="js/map.js"></script>
+    <script type="module" src="./js/map.js"></script>
+    <script type="module" src="./js/fields.js"></script>
+    <script type="module" src="./js/directions.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <main>
@@ -19,10 +21,12 @@
                 <label>
                     <span class="visually--hidden">Enter your origin</span>
                     <input type="text" id="origin-input" class="origin-input" placeholder="Origin">
+                    <div class="autocomplete-results" id="origin-autocomplete-results"></div>
                 </label>
                 <label>
                     <span class="visually--hidden">Enter your destination</span>
                     <input type="text" id="destination-input" class="destination-input" placeholder="Destination">
+                    <div class="autocomplete-results" id="destination-autocomplete-results"></div>
                 </label>
             </section>
             <section class="directions-suggestions-container">

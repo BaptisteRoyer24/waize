@@ -9,10 +9,12 @@ using Models;
 public class RoutingController : ControllerBase
 {
     private readonly IRoutingService _routingService;
+    private readonly IAutocompleteService _autocompleteService;
 
-    public RoutingController(IRoutingService routingService)
+    public RoutingController(IRoutingService routingService, IAutocompleteService autocompleteService)
     {
         _routingService = routingService;
+        _autocompleteService = autocompleteService;
     }
 
     [HttpGet("directions")]
@@ -23,5 +25,12 @@ public class RoutingController : ControllerBase
 
         var directions = await _routingService.GetDirectionsAsync(origin, destination);
         return Ok(directions);
+    }
+    
+    [HttpGet("autocomplete")]
+    public async Task<IActionResult> GetAutocomplete([FromQuery] string input)
+    {
+        var autocomplete = await _autocompleteService.GetAutocompleteAsync(input);
+        return Ok(autocomplete);
     }
 }
