@@ -11,10 +11,12 @@ public class RoutingService : IRoutingService
 {
     private readonly HttpClient _httpClient;
     private string JCDecauxAPIKey = "85bcea73cc7f98dda1446228be5c8818bbf1ef9c";
+    private readonly IApacheService _apacheService;
 
-    public RoutingService(HttpClient httpClient)
+    public RoutingService(HttpClient httpClient, IApacheService apacheService)
     {
         _httpClient = httpClient;
+        _apacheService = apacheService;
     }
 
     public async Task<RouteDetails> GetDirectionsAsync(Coordinate origin, Coordinate destination)
@@ -53,6 +55,7 @@ public class RoutingService : IRoutingService
         // If it is not worth it to take the bicycle
         if (await GetWalkingDistanceAsync(origin, destination) < (originFootDistance + destinationFootDistance))
         {
+            _apacheService.sendInformation("It is faster to walk directly to your destination");
             var (originToDestinationFootCoordinates, originToDestinationFootSteps) = await GetRouteGeometryAsync(origin, destination, true);
             return new RouteDetails
             {

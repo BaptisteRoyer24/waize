@@ -7,6 +7,7 @@ builder.Services.AddControllers(); // Ajout des contrôleurs REST
 builder.Services.AddHttpClient(); // Pour les appels HTTP externes
 builder.Services.AddSingleton<IRoutingService, RoutingService>(); // Injection du service métier
 builder.Services.AddSingleton<IAutocompleteService, AutocompleteService>(); // Injection du service métier
+builder.Services.AddSingleton<IApacheService, ApacheService>(); // Injection du service métier
 
 // Étape 1 : Ajouter CORS
 builder.Services.AddCors(options =>
