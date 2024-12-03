@@ -1,7 +1,10 @@
+import {changeRoutesToRed, findItinerary} from "./map.js";
+
 document.addEventListener("DOMContentLoaded", () => {
     const popupContainer = document.querySelector(".popup-container");
     const popupMessage = document.querySelector(".popup-message");
     const popupClose = document.querySelector(".popup-close");
+    let changedItinerary = false;
 
     popupContainer.style.display = "none";
 
@@ -15,9 +18,14 @@ document.addEventListener("DOMContentLoaded", () => {
             console.log("Connected to ActiveMQ");
 
             // Subscribe to the queue/topic
-            client.subscribe("/queue/test", (message) => {
+            client.subscribe("/queue/info", (message) => {
                 if (message.body) {
+                    console.log(message.body)
                     displayPopup(message.body);
+                }
+                if (message.body === "The itinerary has changed !") {
+                    changeRoutesToRed();
+                    changedItinerary = true;
                 }
             });
         },
@@ -34,6 +42,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Close popup on button click
     popupClose.addEventListener("click", () => {
+        if (changedItinerary) {
+            findItinerary()
+            changedItinerary = false;
+        }
         popupContainer.style.display = "none"; // Hide the popup
     });
 });

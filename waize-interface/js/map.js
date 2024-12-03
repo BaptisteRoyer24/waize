@@ -19,28 +19,33 @@ document.addEventListener("DOMContentLoaded", async () => {
     }).addTo(map);
 });
 
+export const changeRoutesToRed = () => {
+    routeLayers.forEach(layer => {
+        if (layer instanceof L.Polyline) {
+            layer.setStyle({ color: 'red' });
+        }
+    });
+};
+
 export const updateMarker = (marker, coordinates, iconUrl = null) => {
     if (marker) {
-        // Update the existing marker position
         marker.setLatLng(coordinates);
 
-        // Update the icon if a new icon URL is provided
         if (iconUrl) {
             const newIcon = L.icon({
                 iconUrl: iconUrl,
-                iconSize: [30, 30], // Adjust size as needed
-                iconAnchor: [15, 30], // Anchor point of the icon
+                iconSize: [30, 30],
+                iconAnchor: [15, 30],
             });
             marker.setIcon(newIcon);
         }
     } else {
-        // Create a new marker with or without a custom icon
         const options = { draggable: false };
         if (iconUrl) {
             options.icon = L.icon({
                 iconUrl: iconUrl,
-                iconSize: [30, 30], // Adjust size as needed
-                iconAnchor: [15, 30], // Anchor point of the icon
+                iconSize: [30, 30],
+                iconAnchor: [15, 30],
             });
         }
         marker = L.marker(coordinates, options).addTo(map);
