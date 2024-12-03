@@ -107,7 +107,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 // Function to fetch autocomplete suggestions
 const fetchAutocompleteSuggestions = async (query) => {
-    const url = `http://localhost:5117/api/Routing/autocomplete?input=${query}`;
+    const url = `http://localhost:5000/api/Routing/autocomplete?input=${query}`;
     const response = await fetch(url);
     if (!response.ok) {
         throw new Error("Failed to fetch autocomplete results.");

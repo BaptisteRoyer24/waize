@@ -65,7 +65,7 @@ export const findItinerary = async () => {
     destinationMarker = updateMarker(destinationMarker, [destinationInput.lat, destinationInput.lng], "./img/destination.png");
 
     try {
-        const response = await fetch(`http://localhost:5117/api/Routing/directions?originLat=${originInput.lat}&originLng=${originInput.lng}&destLat=${destinationInput.lat}&destLng=${destinationInput.lng}`);
+        const response = await fetch(`http://localhost:5000/api/Routing/directions?originLat=${originInput.lat}&originLng=${originInput.lng}&destLat=${destinationInput.lat}&destLng=${destinationInput.lng}`);
         if (!response.ok) {
             throw new Error("Error calling the API");
         }

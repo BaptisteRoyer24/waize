@@ -11,18 +11,20 @@ builder.Services.AddSingleton<IApacheService, ApacheService>(); // Injection du 
 
 // Ajout de ProxyClient avec une URL de service configurée
 builder.Services.AddSingleton<ProxyClient>(sp => 
-    new ProxyClient("http://localhost:5194/ProxyCacheService"));
+    new ProxyClient("http://localhost:5001/ProxyCacheService"));
 
 // Étape 1 : Ajouter CORS
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        policy.WithOrigins("http://localhost:63343") // Autoriser les requêtes depuis ce domaine
-            .AllowAnyHeader()
-            .AllowAnyMethod();
+        policy.AllowAnyOrigin()  // Autorise toutes les origines
+            .AllowAnyHeader()  // Autorise tous les en-têtes
+            .AllowAnyMethod(); // Autorise toutes les méthodes (GET, POST, etc.)
     });
 });
+
+builder.WebHost.UseUrls("http://localhost:5000");
 
 var app = builder.Build();
 

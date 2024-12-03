@@ -2,8 +2,8 @@ using CoreWCF;
 using CoreWCF.Configuration;
 
 var builder = WebApplication.CreateBuilder(args);
-
 builder.Services.AddServiceModelServices();
+builder.WebHost.UseUrls("http://localhost:5001");
 
 var app = builder.Build();
 
