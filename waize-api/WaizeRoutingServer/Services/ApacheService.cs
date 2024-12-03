@@ -25,7 +25,7 @@ public class ApacheService : IApacheService
             using ISession session = connection.CreateSession();
 
             // Use the session to target a queue.
-            IDestination destination = session.GetQueue("test");
+            IDestination destination = session.GetQueue("info");
 
             // Create a Producer targeting the selected queue.
             using IMessageProducer producer = session.CreateProducer(destination);

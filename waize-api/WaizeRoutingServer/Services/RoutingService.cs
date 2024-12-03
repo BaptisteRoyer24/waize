@@ -5,6 +5,7 @@ using System.Text.Json;
 public interface IRoutingService
 {
     Task<RouteDetails> GetDirectionsAsync(Coordinate origin, Coordinate destination);
+    void CheckItineraryChanges(Coordinate origin, Coordinate destination);
 }
 
 public class RoutingService : IRoutingService
@@ -12,6 +13,7 @@ public class RoutingService : IRoutingService
     private string JCDecauxAPIKey = "85bcea73cc7f98dda1446228be5c8818bbf1ef9c";
     private readonly IApacheService _apacheService;
     private readonly ProxyClient _proxyClient;
+    private RouteDetails savedRouteDetails;
 
     public RoutingService(IApacheService apacheService, ProxyClient proxyClient)
     {
@@ -73,7 +75,8 @@ public class RoutingService : IRoutingService
         var (secondWalkCoordinates, secondWalkSteps) = await GetRouteGeometryAsync(nearestStationFromDestination.Coordinate, destination, 3);
 
         // Combine all sections into a list of RouteSection objects
-        return new RouteDetails
+        
+        savedRouteDetails = new RouteDetails
         {
             WalkingToStation = new RouteSection { Mode = "walking", Coordinates = firstWalkCoordinates, Steps = firstWalkSteps },
             BikingBetweenStations = new RouteSection { Mode = "biking", Coordinates = bikeCoordinates, Steps = bikeSteps },
@@ -81,6 +84,8 @@ public class RoutingService : IRoutingService
             PickupStation = nearestStationFromOrigin,
             DropOffStation = nearestStationFromDestination
         };
+
+        return savedRouteDetails;
     }
 
     private async Task<string> GetCityNameAsync(Coordinate coord)
@@ -458,6 +463,15 @@ public class RoutingService : IRoutingService
 
         return polyline;
     }
+
+    public async void CheckItineraryChanges(Coordinate origin, Coordinate destination)
+    {
+        var currentRouteDetails = await GetDirectionsAsync(origin, destination);
+        if (!currentRouteDetails.Equals(savedRouteDetails))
+        {
+            _apacheService.sendInformation("The itinerary has changed !");
+        }
+    }
 }
 
 public class RouteDetails
@@ -467,6 +481,23 @@ public class RouteDetails
     public RouteSection WalkingToDestination { get; set; }
     public Station PickupStation { get; set; }
     public Station DropOffStation { get; set; }
+    
+    public override bool Equals(object obj)
+    {
+        if (obj is not RouteDetails other)
+            return false;
+
+        return Equals(WalkingToStation, other.WalkingToStation) &&
+               Equals(BikingBetweenStations, other.BikingBetweenStations) &&
+               Equals(WalkingToDestination, other.WalkingToDestination) &&
+               Equals(PickupStation, other.PickupStation) &&
+               Equals(DropOffStation, other.DropOffStation);
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(WalkingToStation, BikingBetweenStations, WalkingToDestination, PickupStation, DropOffStation);
+    }
 }
 
 public class RouteSection
