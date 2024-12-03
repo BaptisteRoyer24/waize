@@ -14,6 +14,7 @@ public class RoutingService : IRoutingService
     private readonly IApacheService _apacheService;
     private readonly ProxyClient _proxyClient;
     private RouteDetails savedRouteDetails;
+    private bool checkedWeather = false;
 
     public RoutingService(IApacheService apacheService, ProxyClient proxyClient)
     {
@@ -47,6 +48,13 @@ public class RoutingService : IRoutingService
         // Step 5: Find the best station for pickup (minimizing walking distance)
         var (nearestStationFromOrigin, originFootDistance) = await GetNearestStationByFoot(nearestStationsFromOrigin, origin);
 
+        if (!checkedWeather)
+        {
+            var weatherData = await GetWeatherDescriptionAsync(destination);
+            _apacheService.sendInformation(weatherData);
+            checkedWeather = true;
+        }
+        
         // Step 6: Find the 3 nearest stations to the destination
         stations.Remove(nearestStationFromOrigin); // Remove the pickup station
         var nearestStationsFromDestination = GetNearestStations(stations, destination, false);
@@ -479,6 +487,31 @@ public class RoutingService : IRoutingService
         {
             Console.WriteLine($"Error during itinerary check: {ex.Message}");
             throw;
+        }
+    }
+    
+    private async Task<string> GetWeatherDescriptionAsync(Coordinate coordinate)
+    {
+        try
+        {
+            string destinationLatitude = coordinate.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            string destinationLongitude = coordinate.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            var apiKey = "34539aa0008b0fe2b4598f3e8a6f6eb4";
+            var url = $"https://api.openweathermap.org/data/2.5/weather?lat={destinationLatitude}&lon={destinationLongitude}&appid={apiKey}&units=metric";
+            var content = await _proxyClient.GetResponseAsync(url);
+
+            using (var jsonDoc = JsonDocument.Parse(content))
+            {
+                var weatherData = jsonDoc.RootElement
+                    .GetProperty("weather")[0]
+                    .GetProperty("description").GetString();
+                return weatherData;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erreur lors de la récupération de la distance à pied : {ex.Message}");
+            return "";
         }
     }
 }
