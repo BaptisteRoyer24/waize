@@ -28,12 +28,13 @@ public class RoutingController : ControllerBase
     }
     
     [HttpGet("check-itinerary")]
-    public void CheckItinerary([FromQuery] double originLat, [FromQuery] double originLng, [FromQuery] double destLat, [FromQuery] double destLng)
+    public async Task<IActionResult> CheckItinerary([FromQuery] double originLat, [FromQuery] double originLng, [FromQuery] double destLat, [FromQuery] double destLng)
     {
         var origin = new Coordinate { Latitude = originLat, Longitude = originLng };
         var destination = new Coordinate { Latitude = destLat, Longitude = destLng };
 
-        _routingService.CheckItineraryChanges(origin, destination);
+        await _routingService.CheckItineraryChanges(origin, destination);
+        return Ok("Itinerary check completed");
     }
     
     [HttpGet("autocomplete")]

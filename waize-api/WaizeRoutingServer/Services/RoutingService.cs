@@ -5,7 +5,7 @@ using System.Text.Json;
 public interface IRoutingService
 {
     Task<RouteDetails> GetDirectionsAsync(Coordinate origin, Coordinate destination);
-    void CheckItineraryChanges(Coordinate origin, Coordinate destination);
+    Task CheckItineraryChanges(Coordinate origin, Coordinate destination);
 }
 
 public class RoutingService : IRoutingService
@@ -464,12 +464,21 @@ public class RoutingService : IRoutingService
         return polyline;
     }
 
-    public async void CheckItineraryChanges(Coordinate origin, Coordinate destination)
+    public async Task CheckItineraryChanges(Coordinate origin, Coordinate destination)
     {
-        var currentRouteDetails = await GetDirectionsAsync(origin, destination);
-        if (!currentRouteDetails.Equals(savedRouteDetails))
+        try
         {
-            _apacheService.sendInformation("The itinerary has changed !");
+            var currentRouteDetails = await GetDirectionsAsync(origin, destination);
+
+            if (!currentRouteDetails.Equals(savedRouteDetails))
+            {
+                _apacheService.sendInformation("The itinerary has changed!");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error during itinerary check: {ex.Message}");
+            throw;
         }
     }
 }

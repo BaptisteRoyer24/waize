@@ -11,7 +11,7 @@ public class GenericCache<T>
         _defaultCacheDuration = defaultCacheDuration;
     }
 
-    public T Get(string key, Func<T> fetchFunc, TimeSpan? duration = null)
+    public T Get(string key, Func<T> fetchFunc, Action<CacheItemPolicy> configurePolicy = null)
     {
         if (_cache.Contains(key))
         {
@@ -20,7 +20,10 @@ public class GenericCache<T>
 
         var value = fetchFunc();
 
-        _cache.Set(key, value, DateTimeOffset.Now.Add(duration ?? _defaultCacheDuration));
+        var policy = new CacheItemPolicy();
+        configurePolicy?.Invoke(policy);
+
+        _cache.Set(key, value, policy);
 
         return value;
     }
