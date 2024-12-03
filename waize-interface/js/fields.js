@@ -11,13 +11,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         const { lat, lng } = e.latlng;
 
         if (!inputs.origin.value) {
-            inputs.origin.value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-            updateMarker(getOriginMarker(), [lat, lng], "./img/origin.png");
-            originInput = {displayName: "", lat: lat, lng: lng};
+            setOrigin(lat, lng)
         } else if (!inputs.destination.value) {
-            inputs.destination.value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-            updateMarker(getDestinationMarker(), [lat, lng], "./img/destination.png");
-            destinationInput = {displayName: "", lat: lat, lng: lng};
+            setDestination(lat, lng)
         }
 
         const originValue = inputs.origin.value.trim();
@@ -64,6 +60,45 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
         });
     };
+
+    const originButton = document.getElementById("origin-location-button");
+    const destinationButton = document.getElementById("destination-location-button");
+
+    const setOrigin = (lat, lng) => {
+        inputs.origin.value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+        updateMarker(getOriginMarker(), [lat, lng], "./img/origin.png");
+        originInput = {displayName: "", lat: lat, lng: lng};
+    }
+
+    const setDestination = (lat, lng) => {
+        inputs.destination.value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+        updateMarker(getDestinationMarker(), [lat, lng], "./img/destination.png");
+        destinationInput = {displayName: "", lat: lat, lng: lng};
+    }
+
+    function getUserLocation(buttonType) {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    if (buttonType === "Origin") {
+                        setOrigin(lat, lng)
+                    } else if (buttonType === "Destination") {
+                        setDestination(lat, lng)
+                    }
+                },
+                (error) => {
+                    console.error("Error getting location:", error.message);
+                }
+            );
+        } else {
+            console.error("Geolocation is not supported by this browser.");
+        }
+    }
+
+    originButton.addEventListener("click", () => getUserLocation("Origin"));
+    destinationButton.addEventListener("click", () => getUserLocation("Destination"));
 
     // Initialize autocomplete for origin and destination
     setupAutocomplete(inputs.origin, inputs.originResults, true);

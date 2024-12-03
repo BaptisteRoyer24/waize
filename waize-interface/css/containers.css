@@ -91,6 +91,7 @@ input {
 /* ---------- Element containers ---------- */
 
 .inputs-container > label {
+    position: relative;
     display: flex;
     width: 70%;
     height: 20%;
@@ -124,6 +125,17 @@ input {
 
 .autocomplete-item:last-child {
     border-radius: 5px;
+}
+
+.location-button {
+    position: absolute;
+    left: 80%;
+    top: 55%;
+    transform: translate(-0%, -50%);
+    background: #f4f4f4;
+    border: none;
+    object-fit: contain;
+    margin-right: 5%;
 }
 
 .directions-list {
