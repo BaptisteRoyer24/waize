@@ -9,14 +9,14 @@ public interface IRoutingService
 
 public class RoutingService : IRoutingService
 {
-    private readonly HttpClient _httpClient;
     private string JCDecauxAPIKey = "85bcea73cc7f98dda1446228be5c8818bbf1ef9c";
     private readonly IApacheService _apacheService;
+    private readonly ProxyClient _proxyClient;
 
-    public RoutingService(HttpClient httpClient, IApacheService apacheService)
+    public RoutingService(IApacheService apacheService, ProxyClient proxyClient)
     {
-        _httpClient = httpClient;
         _apacheService = apacheService;
+        _proxyClient = proxyClient;
     }
 
     public async Task<RouteDetails> GetDirectionsAsync(Coordinate origin, Coordinate destination)
@@ -90,37 +90,26 @@ public class RoutingService : IRoutingService
             string latitude = coord.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture);
             string longitude = coord.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture);
             var url = $"https://nominatim.openstreetmap.org/reverse?lat={latitude}&lon={longitude}&format=json";
-
-            var request = new HttpRequestMessage(HttpMethod.Get, url);
-            request.Headers.Add("User-Agent", "WaizeRoutingServer/1.0 (contact@yourdomain.com)");
-
-            var response = await _httpClient.SendAsync(request);
-            response.EnsureSuccessStatusCode();
-
-            var content = await response.Content.ReadAsStringAsync();
-
+            
+            var content = await _proxyClient.GetResponseAsync(url);
+            
             using (var jsonDoc = JsonDocument.Parse(content))
             {
                 var root = jsonDoc.RootElement;
-
+            
                 if (root.TryGetProperty("address", out var addressElement) &&
                     addressElement.TryGetProperty("city", out var cityElement))
                 {
                     return cityElement.GetString() ?? "Unknown city";
                 }
             }
-
+            
             return "Unknown location";
-        }
-        catch (HttpRequestException ex)
-        {
-            Console.WriteLine($"Error while calling nominatim API : {ex.Message}");
-            throw new Exception("Can't retrieve city name");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Global error : {ex.Message}");
-            throw new Exception("Unexpected error");
+            Console.WriteLine($"Error while calling nominatim API : {ex.Message}");
+            throw new Exception("Can't retrieve city name");
         }
     }
 
@@ -130,10 +119,7 @@ public class RoutingService : IRoutingService
         {
             var url = "https://api.jcdecaux.com/vls/v1/contracts?apiKey=" + JCDecauxAPIKey;
 
-            var response = await _httpClient.GetAsync(url);
-            response.EnsureSuccessStatusCode();
-
-            var content = await response.Content.ReadAsStringAsync();
+            var content = await _proxyClient.GetResponseAsync(url);
 
             using (var jsonDoc = JsonDocument.Parse(content))
             {
@@ -157,14 +143,10 @@ public class RoutingService : IRoutingService
 
             return "Unknown contract";
         }
-        catch (HttpRequestException ex)
+        catch (Exception ex)
         {
-            Console.WriteLine($"Error HTTP : {ex.Message}");
+            Console.WriteLine($"Error : {ex.Message}");
             throw new Exception("Can't retrieve contract name");
-        }
-        catch (Exception)
-        {
-            throw new Exception("Unexpected error");
         }
     }
 
@@ -174,13 +156,7 @@ public class RoutingService : IRoutingService
         {
             var url = $"https://api.jcdecaux.com/vls/v1/stations?contract={contractName}&apiKey=" + JCDecauxAPIKey;
 
-            var request = new HttpRequestMessage(HttpMethod.Get, url);
-            request.Headers.Add("User-Agent", "WaizeRoutingServer/1.0 (contact@yourdomain.com)");
-
-            var response = await _httpClient.SendAsync(request);
-            response.EnsureSuccessStatusCode();
-
-            var content = await response.Content.ReadAsStringAsync();
+            var content = await _proxyClient.GetResponseAsync(url);
 
             var stations = new List<Station>();
             using (var jsonDoc = JsonDocument.Parse(content))
@@ -230,13 +206,7 @@ public class RoutingService : IRoutingService
         {
             var url = $"https://api.jcdecaux.com/vls/v1/stations?apiKey=" + JCDecauxAPIKey;
 
-            var request = new HttpRequestMessage(HttpMethod.Get, url);
-            request.Headers.Add("User-Agent", "WaizeRoutingServer/1.0 (contact@yourdomain.com)");
-
-            var response = await _httpClient.SendAsync(request);
-            response.EnsureSuccessStatusCode();
-
-            var content = await response.Content.ReadAsStringAsync();
+            var content = await _proxyClient.GetResponseAsync(url);
 
             var stations = new List<Station>();
             using (var jsonDoc = JsonDocument.Parse(content))
@@ -360,13 +330,7 @@ public class RoutingService : IRoutingService
             string destinationLongitude = destination.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture);
             var url = $"https://routing.openstreetmap.de/routed-foot/route/v1/inutile/{originLongitude},{originLatitude};{destinationLongitude},{destinationLatitude}?overview=false&steps=false";
 
-            var request = new HttpRequestMessage(HttpMethod.Get, url);
-            request.Headers.Add("User-Agent", "WaizeRoutingServer/1.0 (contact@yourdomain.com)");
-
-            var response = await _httpClient.SendAsync(request);
-            response.EnsureSuccessStatusCode();
-
-            var content = await response.Content.ReadAsStringAsync();
+            var content = await _proxyClient.GetResponseAsync(url);
 
             using (var jsonDoc = JsonDocument.Parse(content))
             {
@@ -400,13 +364,7 @@ public class RoutingService : IRoutingService
 
             Console.WriteLine($"API call for directions ({(isWalking ? "walking" : "biking")}): {url}");
 
-            var request = new HttpRequestMessage(HttpMethod.Get, url);
-            request.Headers.Add("User-Agent", "WaizeRoutingServer/1.0 (contact@yourdomain.com)");
-
-            var response = await _httpClient.SendAsync(request);
-            response.EnsureSuccessStatusCode();
-
-            var content = await response.Content.ReadAsStringAsync();
+            var content = await _proxyClient.GetResponseAsync(url);
 
             using (var jsonDoc = JsonDocument.Parse(content))
             {

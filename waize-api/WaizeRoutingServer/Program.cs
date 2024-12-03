@@ -9,6 +9,10 @@ builder.Services.AddSingleton<IRoutingService, RoutingService>(); // Injection d
 builder.Services.AddSingleton<IAutocompleteService, AutocompleteService>(); // Injection du service métier
 builder.Services.AddSingleton<IApacheService, ApacheService>(); // Injection du service métier
 
+// Ajout de ProxyClient avec une URL de service configurée
+builder.Services.AddSingleton<ProxyClient>(sp => 
+    new ProxyClient("http://localhost:5194/ProxyCacheService"));
+
 // Étape 1 : Ajouter CORS
 builder.Services.AddCors(options =>
 {
