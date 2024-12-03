@@ -371,16 +371,13 @@ public class RoutingService : IRoutingService
             {
                 var route = jsonDoc.RootElement.GetProperty("routes")[0];
 
-                // Decode the geometry
                 var encodedGeometry = route.GetProperty("geometry").GetString();
                 var coordinates = DecodePolyline(encodedGeometry);
 
-                // Extract steps
                 var steps = route.GetProperty("legs")[0].GetProperty("steps")
                     .EnumerateArray()
                     .Select(step =>
                     {
-                        // Try to get the "modifier" property safely
                         string instruction = step.GetProperty("maneuver").TryGetProperty("modifier", out var modifierProp)
                             ? modifierProp.GetString()
                             : null;
@@ -394,7 +391,6 @@ public class RoutingService : IRoutingService
                     })
                     .ToList();
 
-                // Ajouter l'attribut `type` à la dernière direction
                 if (steps.Any())
                 {
                     var lastStep = steps.Last();
@@ -418,7 +414,7 @@ public class RoutingService : IRoutingService
         catch (Exception ex)
         {
             Console.WriteLine($"Error fetching route geometry and steps: {ex.Message}");
-            return (new List<Coordinate>(), new List<DirectionStep>()); // Return empty results on failure
+            return (new List<Coordinate>(), new List<DirectionStep>());
         }
     }
     
@@ -483,10 +479,10 @@ public class RouteSection
 
 public class DirectionStep
 {
-    public double Distance { get; set; } // Distance in meters
-    public string Instruction { get; set; } // Maneuver type or instruction
-    public string StreetName { get; set; } // Name of the street
-    public string Type { get; set; } // pickup-station, dropoff-station, destination
+    public double Distance { get; set; }
+    public string Instruction { get; set; }
+    public string StreetName { get; set; }
+    public string Type { get; set; }
 }
 
 public class Station
