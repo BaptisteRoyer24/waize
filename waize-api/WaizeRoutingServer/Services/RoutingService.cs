@@ -56,7 +56,7 @@ public class RoutingService : IRoutingService
         if (await GetWalkingDistanceAsync(origin, destination) < (originFootDistance + destinationFootDistance))
         {
             _apacheService.sendInformation("It is faster to walk directly to your destination");
-            var (originToDestinationFootCoordinates, originToDestinationFootSteps) = await GetRouteGeometryAsync(origin, destination, true);
+            var (originToDestinationFootCoordinates, originToDestinationFootSteps) = await GetRouteGeometryAsync(origin, destination, 3);
             return new RouteDetails
             {
                 WalkingToStation = new RouteSection { Mode = "walking", Coordinates = originToDestinationFootCoordinates, Steps = originToDestinationFootSteps },
@@ -64,13 +64,13 @@ public class RoutingService : IRoutingService
         }
         
         // Step 8: Get the walking route from origin -> first station
-        var (firstWalkCoordinates, firstWalkSteps) = await GetRouteGeometryAsync(origin, nearestStationFromOrigin.Coordinate, true);
+        var (firstWalkCoordinates, firstWalkSteps) = await GetRouteGeometryAsync(origin, nearestStationFromOrigin.Coordinate, 1);
 
         // Step 9: Get the biking route from first station -> second station
-        var (bikeCoordinates, bikeSteps) = await GetRouteGeometryAsync(nearestStationFromOrigin.Coordinate, nearestStationFromDestination.Coordinate, false);
+        var (bikeCoordinates, bikeSteps) = await GetRouteGeometryAsync(nearestStationFromOrigin.Coordinate, nearestStationFromDestination.Coordinate, 2);
 
         // Step 10: Get the walking route from second station -> destination
-        var (secondWalkCoordinates, secondWalkSteps) = await GetRouteGeometryAsync(nearestStationFromDestination.Coordinate, destination, true);
+        var (secondWalkCoordinates, secondWalkSteps) = await GetRouteGeometryAsync(nearestStationFromDestination.Coordinate, destination, 3);
 
         // Combine all sections into a list of RouteSection objects
         return new RouteDetails
@@ -349,10 +349,11 @@ public class RoutingService : IRoutingService
         }
     }
     
-    private async Task<(List<Coordinate>, List<DirectionStep>)> GetRouteGeometryAsync(Coordinate origin, Coordinate destination, bool isWalking)
+    private async Task<(List<Coordinate>, List<DirectionStep>)> GetRouteGeometryAsync(Coordinate origin, Coordinate destination, int section)
     {
         try
         {
+            bool isWalking = section == 1 || section == 3;
             string mode = isWalking ? "routed-foot" : "routed-bike";
 
             string originLatitude = origin.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture);
@@ -392,6 +393,24 @@ public class RoutingService : IRoutingService
                         };
                     })
                     .ToList();
+
+                // Ajouter l'attribut `type` à la dernière direction
+                if (steps.Any())
+                {
+                    var lastStep = steps.Last();
+                    switch (section)
+                    {
+                        case 1:
+                            lastStep.Type = "pickup-station";
+                            break;
+                        case 2:
+                            lastStep.Type = "dropoff-station";
+                            break;
+                        case 3:
+                            lastStep.Type = "destination";
+                            break;
+                    }
+                }
 
                 return (coordinates, steps);
             }
@@ -467,6 +486,7 @@ public class DirectionStep
     public double Distance { get; set; } // Distance in meters
     public string Instruction { get; set; } // Maneuver type or instruction
     public string StreetName { get; set; } // Name of the street
+    public string Type { get; set; } // pickup-station, dropoff-station, destination
 }
 
 public class Station

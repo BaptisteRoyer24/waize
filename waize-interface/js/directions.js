@@ -10,10 +10,21 @@ export const updateDirectionsUI = (sections) => {
             const directionInfo = document.createElement("div");
             directionInfo.classList.add("direction-info");
 
-            // Distance
+            // Distance or custom text for pickup station
             const distanceSpan = document.createElement("span");
             distanceSpan.classList.add("direction__distance");
-            distanceSpan.textContent = `${step.distance.toFixed(1)}m`;
+
+            if (step.type === "pickup-station") {
+                distanceSpan.textContent = "Pickup station";
+            } else if (step.type === "dropoff-station") {
+                distanceSpan.textContent = "Drop-off station";
+            }
+            else if (step.type === "destination") {
+                distanceSpan.textContent = "Destination";
+            }
+            else {
+                distanceSpan.textContent = `${step.distance.toFixed(1)}m`; // Default distance
+            }
 
             // Street Name
             const streetSpan = document.createElement("span");
@@ -26,18 +37,25 @@ export const updateDirectionsUI = (sections) => {
             // Determine instruction type (departure, arrival, or maneuver)
             let instructionText;
             if (!step.instruction) {
-                instructionText = "DEPARTURE"
+                instructionText = "DEPARTURE";
             } else {
                 instructionText = step.instruction;
             }
 
-            // Rotate arrow based on instruction
-            const arrowRotation = getArrowRotation(instructionText);
-
-            // Arrow Icon
+            // Arrow or custom icon for pickup station
             const directionIcon = document.createElement("div");
             directionIcon.classList.add("direction__icon");
-            directionIcon.innerHTML = `<span style="transform: rotate(${arrowRotation}deg);">&#11014;</span>`; // Rotated arrow
+
+            if (step.type === "pickup-station" || step.type === "dropoff-station") {
+                // Use a custom icon for pickup station
+                directionIcon.innerHTML = `<img src="./img/location.png" alt="Station icon" style="width: 24px; height: 24px;" />`;
+            } else if (step.type === "destination") {
+                directionIcon.innerHTML = `<img src="./img/destination.png" alt="Destination icon" style="width: 24px; height: 24px;" />`;
+            } else {
+                // Rotate arrow based on instruction
+                const arrowRotation = getArrowRotation(instructionText);
+                directionIcon.innerHTML = `<span style="transform: rotate(${arrowRotation}deg);">&#11014;</span>`; // Rotated arrow
+            }
 
             directionItem.appendChild(directionInfo);
             directionItem.appendChild(directionIcon);
